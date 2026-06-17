@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Everything</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0f0c29, #302b63, #24243e) fixed;
+            overflow-x: hidden;
+        }
+
+        /* ─── NAV BAR (always visible) ─── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(15, 12, 41, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 0.6rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .navbar .logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .navbar .logo-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #fff;
+            -webkit-text-fill-color: #fff;
+        }
+        .navbar .nav-link {
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.8rem;
+            text-decoration: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 100px;
+            transition: all 0.2s;
+            margin-left: auto;
+        }
+        .navbar .nav-link:hover {
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .navbar .watermark {
+            color: rgba(255, 255, 255, 0.05);
+            font-size: 9px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+            pointer-events: none;
+            user-select: none;
+        }
+        .navbar .share-link-btn {
+            background: rgba(79, 172, 254, 0.12);
+            border: 1px solid rgba(79, 172, 254, 0.15);
+            color: #8ab4f8;
+            padding: 0.3rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: none;
+        }
+        .navbar .share-link-btn:hover {
+            background: rgba(79, 172, 254, 0.22);
+        }
+        .navbar .share-link-btn.show {
+            display: inline-block;
+        }
+
+        /* ─── PAGE: UPLOAD ─── */
+        #uploadPage {
+            display: none;
+            padding: 5rem 1rem 3rem;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+        #uploadPage.active {
+            display: flex;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 2.5rem;
+            padding: 2.5rem 2rem 2.8rem;
+            box-shadow: 0 32px 72px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.25rem;
+        }
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #f5f7fa, #c3cfe2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        header .badge {
+            margin-left: auto;
+            background: rgba(79, 172, 254, 0.20);
+            border: 1px solid rgba(79, 172, 254, 0.25);
+            padding: 0.3rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            color: #8ab4f8;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        .dropzone {
+            position: relative;
+            border: 2px dashed rgba(255, 255, 255, 0.20);
+            border-radius: 1.8rem;
+            padding: 3.2rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+        .dropzone::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 50% 0%, rgba(79, 172, 254, 0.06), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .dropzone:hover::before,
+        .dropzone.dragover::before {
+            opacity: 1;
+        }
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.05);
+            transform: scale(1.005);
+        }
+        .dropzone .upload-icon {
+            font-size: 3.6rem;
+            margin-bottom: 0.8rem;
+            display: block;
+            filter: drop-shadow(0 4px 12px rgba(79, 172, 254, 0.20));
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        .dropzone h2 {
+            color: #e8edf5;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+        .dropzone p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        .dropzone p span {
+            color: #4facfe;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            font-weight: 500;
+        }
+        .dropzone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-list {
+            margin-top: 1.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .file-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .file-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .file-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 1.2rem;
+            padding: 0.7rem 1.2rem 0.7rem 0.9rem;
+            backdrop-filter: blur(8px);
+            animation: slideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            transition: background 0.25s, transform 0.25s;
+        }
+        .file-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateX(3px);
+        }
+        @keyframes slideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(18px) scale(0.97);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .file-item .preview {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.05);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .file-item .preview.video-icon,
+        .file-item .preview.file-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .file-item .info {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-item .info .name {
+            color: #e8edf5;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-item .info .meta {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.75rem;
+            margin-top: 0.1rem;
+        }
+        .file-item .remove-btn {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .file-item .remove-btn:hover {
+            color: #f5576c;
+            background: rgba(245, 87, 108, 0.12);
+            transform: scale(1.1);
+        }
+        .summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            padding: 0.9rem 1.4rem;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .summary .count {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+        }
+        .summary .count strong {
+            color: #e8edf5;
+            font-weight: 600;
+        }
+        .summary .clear-btn {
+            background: rgba(245, 87, 108, 0.10);
+            border: 1px solid rgba(245, 87, 108, 0.15);
+            color: #f5576c;
+            padding: 0.4rem 1.2rem;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .summary .clear-btn:hover {
+            background: rgba(245, 87, 108, 0.20);
+            border-color: rgba(245, 87, 108, 0.30);
+            transform: scale(1.02);
+        }
+        .upload-btn-wrapper {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .upload-btn-wrapper .flex-spacer {
+            flex: 1;
+        }
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+            padding: 0.85rem 2.2rem;
+            border-radius: 100px;
+            color: #0f0c29;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+            box-shadow: 0 8px 28px rgba(79, 172, 254, 0.30);
+        }
+        .upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 36px rgba(79, 172, 254, 0.45);
+        }
+        .upload-btn:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+        .upload-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .upload-btn .spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(15, 12, 41, 0.20);
+            border-top-color: #0f0c29;
+            border-radius: 50%;
+            animation: spin 0.65s linear infinite;
+        }
+        .upload-btn.loading .spinner {
+            display: inline-block;
+        }
+        .upload-btn.loading .btn-text {
+            display: none;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .shared-section {
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 1.5rem;
+        }
+        .shared-section h3 {
+            color: #c3cfe2;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .shared-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+        .shared-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 1.2rem;
+            padding: 0.75rem;
+            text-align: center;
+            transition: all 0.25s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .shared-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-3px);
+            border-color: rgba(79, 172, 254, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+        .shared-card .thumb {
+            width: 100%;
+            aspect-ratio: 16/10;
+            object-fit: cover;
+            border-radius: 0.8rem;
+            background: rgba(0, 0, 0, 0.2);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .shared-card .thumb.video-thumb {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.25);
+        }
+        .shared-card .fname {
+            color: #e8edf5;
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .shared-card .fsize {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.65rem;
+            margin-top: 0.15rem;
+        }
+        .shared-card .delete-overlay {
+            position: absolute;
+            top: 0.3rem;
+            left: 0.3rem;
+            background: rgba(245, 87, 108, 0.85);
+            color: #fff;
+            font-size: 0.55rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 100px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.25s;
+            cursor: pointer;
+            border: none;
+            backdrop-filter: blur(4px);
+            z-index: 2;
+        }
+        .shared-card:hover .delete-overlay {
+            opacity: 1;
+        }
+        .shared-card .delete-overlay:hover {
+            background: rgba(245, 87, 108, 1);
+        }
+
+        /* ─── PAGE: VIEWER ─── */
+        #viewPage {
+            display: none;
+            padding: 5rem 1rem 2rem;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+        #viewPage.active {
+            display: flex;
+        }
+        .viewer-container {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            box-shadow: 0 32px 72px rgba(0, 0, 0, 0.4);
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .viewer-top {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .viewer-top .file-name {
+            color: #e8edf5;
+            font-weight: 600;
+            font-size: 0.95rem;
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .viewer-top .file-meta {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.75rem;
+        }
+        .viewer-top .viewer-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+        .viewer-top .viewer-actions button,
+        .viewer-top .viewer-actions a {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .viewer-top .viewer-actions button:hover,
+        .viewer-top .viewer-actions a:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e8edf5;
+        }
+        .viewer-top .viewer-actions .dl-btn {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #0f0c29;
+            border: none;
+            font-weight: 700;
+        }
+        .viewer-top .viewer-actions .dl-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+            color: #0f0c29;
+        }
+        .viewer-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 1.2rem;
+            overflow: hidden;
+            position: relative;
+        }
+        .viewer-content img {
+            max-width: 100%;
+            max-height: 75vh;
+            display: block;
+            border-radius: 0.8rem;
+            cursor: zoom-in;
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .viewer-content img.zoomed {
+            cursor: zoom-out;
+            transform: scale(2);
+        }
+        .viewer-content video {
+            max-width: 100%;
+            max-height: 75vh;
+            display: block;
+            border-radius: 0.8rem;
+            background: #000;
+        }
+        .viewer-content .file-display {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        .viewer-content .file-display .big-icon {
+            font-size: 4.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .viewer-content .file-display .hint-text {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+        .viewer-content .loading-fade {
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 1rem;
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: rgba(15, 12, 41, 0.92);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.8rem 2rem;
+            border-radius: 100px;
+            color: #e8edf5;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            border-color: rgba(0, 242, 254, 0.25);
+        }
+        .toast.error {
+            border-color: rgba(245, 87, 108, 0.30);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 0.6rem 0;
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 1.5rem 1.2rem 1.8rem; border-radius: 1.8rem; }
+            header h1 { font-size: 1.35rem; }
+            header .badge { display: none; }
+            .dropzone { padding: 2rem 1rem; }
+            .shared-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            .upload-btn-wrapper { justify-content: center; }
+            .upload-btn { width: 100%; justify-content: center; }
+            .summary { flex-direction: column; gap: 0.6rem; align-items: stretch; text-align: center; }
+            .navbar { padding: 0.5rem 1rem; }
+            .viewer-top { flex-direction: column; align-items: flex-start; }
+            .viewer-top .viewer-actions { margin-left: 0; width: 100%; }
+            .viewer-content img.zoomed { transform: scale(1.4); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─── -->
+<nav class="navbar">
+    <a href="#" class="logo" id="homeLink">
+        <span class="logo-icon">⬆</span> Upload Everything
+    </a>
+    <span class="watermark">Erdo</span>
+    <button class="share-link-btn" id="shareLinkBtn">🔗 Copy link</button>
+</nav>
+
+<!-- ─── PAGE: UPLOAD ─── -->
+<div id="uploadPage" class="active">
+    <div class="container">
+        <header>
+            <h1>Upload Everything</h1>
+            <span class="badge">∞ any file</span>
+        </header>
+        <div class="dropzone" id="dropzone">
+            <span class="upload-icon">📁</span>
+            <h2>Drop any file here</h2>
+            <p>or <span>click to browse</span> — any type, any size</p>
+            <input type="file" id="fileInput" multiple />
+        </div>
+        <div class="file-list" id="fileList"></div>
+        <div class="summary">
+            <span class="count"><strong id="fileCount">0</strong> file(s) selected</span>
+            <button class="clear-btn" id="clearBtn">Clear all</button>
+        </div>
+        <div class="upload-btn-wrapper">
+            <span class="flex-spacer"></span>
+            <button class="upload-btn" id="uploadBtn">
+                <span class="btn-text">⬆ Upload &amp; Share</span>
+                <span class="spinner"></span>
+            </button>
+        </div>
+        <div class="shared-section">
+            <h3><span>📂</span> Your files — click to open its own page</h3>
+            <div class="shared-grid" id="sharedGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── PAGE: VIEWER ─── -->
+<div id="viewPage">
+    <div class="viewer-container">
+        <div class="viewer-top">
+            <span class="file-name" id="viewFileName">File</span>
+            <span class="file-meta" id="viewFileMeta"></span>
+            <div class="viewer-actions">
+                <button id="backToUploadBtn">← All files</button>
+                <a class="dl-btn" id="downloadBtn" href="#" download>⬇ Download</a>
+            </div>
+        </div>
+        <div class="viewer-content" id="viewerContent">
+            <span class="loading-fade">Loading...</span>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ─── DOM refs ───
+    const uploadPage = document.getElementById('uploadPage');
+    const viewPage = document.getElementById('viewPage');
+    const homeLink = document.getElementById('homeLink');
+    const shareLinkBtn = document.getElementById('shareLinkBtn');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const fileCount = document.getElementById('fileCount');
+    const clearBtn = document.getElementById('clearBtn');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const toast = document.getElementById('toast');
+    const sharedGrid = document.getElementById('sharedGrid');
+    const viewFileName = document.getElementById('viewFileName');
+    const viewFileMeta = document.getElementById('viewFileMeta');
+    const viewerContent = document.getElementById('viewerContent');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const backToUploadBtn = document.getElementById('backToUploadBtn');
+
+    // ─── State ───
+    let pendingFiles = [];
+    let sharedFiles = [];
+    let currentViewId = null;
+
+    // ─── IndexedDB ───
+    const DB_NAME = 'FileShareDB';
+    const STORE_NAME = 'files';
+    let db = null;
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = e => {
+                const d = e.target.result;
+                if (!d.objectStoreNames.contains(STORE_NAME))
+                    d.createObjectStore(STORE_NAME, { keyPath: 'id' });
+            };
+            req.onsuccess = e => { db = e.target.result; resolve(db); };
+            req.onerror = e => reject(e.target.error);
+        });
+    }
+
+    function getSharedFromDB() {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve([]); return; }
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.getAll();
+            req.onsuccess = () => resolve(req.result || []);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function getFileFromDB(id) {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve(null); return; }
+            const tx = db.transaction(STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.get(id);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function putSharedInDB(item) {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve(); return; }
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.put(item);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    function deleteSharedFromDB(id) {
+        return new Promise((resolve, reject) => {
+            if (!db) { resolve(); return; }
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.delete(id);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    // ─── Helpers ───
+    function formatSize(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const s = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return (bytes / Math.pow(k, i)).toFixed(i > 0 ? 1 : 0) + ' ' + s[i];
+    }
+
+    function isVideo(m) { return m.startsWith('video/'); }
+
+    function isImage(m) { return m.startsWith('image/'); }
+
+    function isAudio(m) { return m.startsWith('audio/'); }
+
+    function genId() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+
+    // ─── Toast ───
+    let toastTimer = null;
+
+    function showToast(msg, type = 'success') {
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ─── Page switching ───
+    function showUploadPage() {
+        uploadPage.classList.add('active');
+        viewPage.classList.remove('active');
+        shareLinkBtn.classList.remove('show');
+        currentViewId = null;
+        const url = new URL(window.location);
+        url.searchParams.delete('f');
+        window.history.pushState({ page: 'upload' }, '', url);
+        document.title = 'Upload Everything';
+        // Refresh shared grid
+        renderShared();
+    }
+
+    function showViewPage(fileId) {
+        uploadPage.classList.remove('active');
+        viewPage.classList.add('active');
+        currentViewId = fileId;
+        const url = new URL(window.location);
+        url.searchParams.set('f', fileId);
+        window.history.pushState({ page: 'view', id: fileId }, '', url);
+        shareLinkBtn.classList.add('show');
+        loadViewer(fileId);
+    }
+
+    // ─── Pending files render ───
+    function renderPending() {
+        if (pendingFiles.length === 0) {
+            fileList.innerHTML = '<div class="empty-state">No files selected</div>';
+            fileCount.textContent = '0';
+            uploadBtn.disabled = true;
+            return;
+        }
+        let html = '';
+        for (const item of pendingFiles) {
+            const f = item.file;
+            let icon = '📄';
+            if (isImage(f.type)) icon = '🖼️';
+            else if (isVideo(f.type)) icon = '🎬';
+            else if (isAudio(f.type)) icon = '🎵';
+            let previewHtml = '';
+            if (isImage(f.type) && item.previewUrl)
+                previewHtml = `<img class="preview" src="${item.previewUrl}" alt="" />`;
+            else if (isVideo(f.type))
+                previewHtml = `<div class="preview video-icon">🎬</div>`;
+            else if (isAudio(f.type))
+                previewHtml = `<div class="preview video-icon">🎵</div>`;
+            else
+                previewHtml = `<div class="preview file-icon">📄</div>`;
+            html += `<div class="file-item" data-id="${item.id}">${previewHtml}<div class="info"><div class="name" title="${f.name}">${f.name}</div><div class="meta">${formatSize(f.size)}</div></div><button class="remove-btn" data-id="${item.id}" title="Remove">&times;</button></div>`;
+        }
+        fileList.innerHTML = html;
+        fileCount.textContent = pendingFiles.length;
+        uploadBtn.disabled = false;
+        document.querySelectorAll('.remove-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const id = parseInt(btn.dataset.id, 10);
+                const idx = pendingFiles.findIndex(p => p.id === id);
+                if (idx !== -1) {
+                    if (pendingFiles[idx].previewUrl) URL.revokeObjectURL(pendingFiles[idx].previewUrl);
+                    pendingFiles.splice(idx, 1);
+                    renderPending();
+                    showToast('Removed', 'success');
+                }
+            });
+        });
+    }
+
+    function addPending(newFiles) {
+        const arr = Array.from(newFiles);
+        if (arr.length === 0) return;
+        for (const f of arr) {
+            const id = Date.now() + Math.random() * 10000 + pendingFiles.length;
+            let previewUrl = null;
+            if (isImage(f.type)) previewUrl = URL.createObjectURL(f);
+            pendingFiles.push({ id, file: f, previewUrl });
+        }
+        renderPending();
+        showToast(`Added ${arr.length} file(s)`, 'success');
+    }
+
+    function clearPending() {
+        for (const item of pendingFiles) {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        }
+        pendingFiles = [];
+        renderPending();
+        showToast('Cleared', 'success');
+    }
+
+    // ─── Shared grid ───
+    function renderShared() {
+        if (sharedFiles.length === 0) {
+            sharedGrid.innerHTML = '<div class="empty-state">No files uploaded yet</div>';
+            return;
+        }
+        let html = '';
+        for (const item of sharedFiles) {
+            let icon = '📄';
+            if (isImage(item.type)) icon = '🖼️';
+            else if (isVideo(item.type)) icon = '🎬';
+            else if (isAudio(item.type)) icon = '🎵';
+            let thumbHtml = '';
+            if (isImage(item.type))
+                thumbHtml = `<img class="thumb" src="${item.dataUrl}" alt="" loading="lazy" />`;
+            else if (isVideo(item.type))
+                thumbHtml = `<div class="thumb video-thumb">🎬</div>`;
+            else if (isAudio(item.type))
+                thumbHtml = `<div class="thumb video-thumb">🎵</div>`;
+            else
+                thumbHtml = `<div class="thumb video-thumb">📄</div>`;
+            html += `<div class="shared-card" data-id="${item.id}">${thumbHtml}<div class="fname" title="${item.name}">${item.name}</div><div class="fsize">${formatSize(item.size)}</div><button class="delete-overlay" data-id="${item.id}" title="Delete">✕ del</button></div>`;
+        }
+        sharedGrid.innerHTML = html;
+
+        // Click card → open its own page (viewer)
+        document.querySelectorAll('.shared-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.delete-overlay')) return;
+                const id = this.dataset.id;
+                showViewPage(id);
+            });
+        });
+
+        // Delete
+        document.querySelectorAll('.delete-overlay').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const id = this.dataset.id;
+                if (!confirm('Delete this file permanently?')) return;
+                await deleteSharedFromDB(id);
+                sharedFiles = await getSharedFromDB();
+                renderShared();
+                showToast('🗑 Deleted', 'success');
+            });
+        });
+    }
+
+    // ─── Upload ───
+    async function uploadAndShare() {
+        if (pendingFiles.length === 0) return;
+        uploadBtn.classList.add('loading');
+        uploadBtn.disabled = true;
+        const processed = [];
+        for (const item of pendingFiles) {
+            const f = item.file;
+            try {
+                const dataUrl = await readFileAsDataURL(f);
+                const shared = { id: genId(), name: f.name, size: f.size, type: f.type, dataUrl: dataUrl, timestamp: Date
+                    .now() };
+                await putSharedInDB(shared);
+                processed.push(shared);
+            } catch (err) {
+                console.error(err);
+                showToast('Error reading ' + f.name, 'error');
+            }
+        }
+        for (const item of pendingFiles) {
+            if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        }
+        pendingFiles = [];
+        renderPending();
+        sharedFiles = await getSharedFromDB();
+        renderShared();
+        uploadBtn.classList.remove('loading');
+        uploadBtn.disabled = true;
+        if (processed.length > 0) {
+            showToast(`✅ Uploaded ${processed.length} file(s)`, 'success');
+        }
+    }
+
+    function readFileAsDataURL(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ─── Viewer ───
+    async function loadViewer(id) {
+        viewerContent.innerHTML = '<span class="loading-fade">Loading...</span>';
+        const file = await getFileFromDB(id);
+        if (!file) {
+            viewerContent.innerHTML = '<div class="file-display"><span class="big-icon">❌</span><div style="color:rgba(255,255,255,0.4)">File not found or was deleted</div></div>';
+            viewFileName.textContent = 'Not found';
+            viewFileMeta.textContent = '';
+            downloadBtn.style.display = 'none';
+            return;
+        }
+
+        viewFileName.textContent = file.name;
+        viewFileMeta.textContent = formatSize(file.size) + ' · ' + file.type;
+        downloadBtn.href = file.dataUrl;
+        downloadBtn.download = file.name;
+        downloadBtn.style.display = 'inline-flex';
+        document.title = file.name + ' · Upload Everything';
+
+        viewerContent.innerHTML = '';
+
+        if (isImage(file.type)) {
+            const img = document.createElement('img');
+            img.src = file.dataUrl;
+            img.alt = file.name;
+            img.draggable = false;
+            img.addEventListener('click', function() {
+                this.classList.toggle('zoomed');
+            });
+            viewerContent.appendChild(img);
+        } else if (isVideo(file.type)) {
+            const video = document.createElement('video');
+            video.src = file.dataUrl;
+            video.controls = true;
+            viewerContent.appendChild(video);
+        } else if (isAudio(file.type)) {
+            const div = document.createElement('div');
+            div.className = 'file-display';
+            div.innerHTML = `
+                <span class="big-icon">🎵</span>
+                <div style="color:#e8edf5; font-weight:600; margin-bottom:0.3rem;">${file.name}</div>
+                <div style="color:rgba(255,255,255,0.3); font-size:0.8rem; margin-bottom:1.2rem;">${formatSize(file.size)}</div>
+                <audio controls src="${file.dataUrl}" style="width:100%; max-width:400px; outline:none;"></audio>
+            `;
+            viewerContent.appendChild(div);
+        } else {
+            const div = document.createElement('div');
+            div.className = 'file-display';
+            div.innerHTML = `
+                <span class="big-icon">📄</span>
+                <div style="color:#e8edf5; font-weight:600; margin-bottom:0.3rem;">${file.name}</div>
+                <div style="color:rgba(255,255,255,0.3); font-size:0.8rem; margin-bottom:0.3rem;">${formatSize(file.size)}</div>
+                <div class="hint-text">No preview available — download the file</div>
+            `;
+            viewerContent.appendChild(div);
+        }
+    }
+
+    // ─── Share link button (in navbar) ───
+    shareLinkBtn.addEventListener('click', () => {
+        if (!currentViewId) return;
+        const link = window.location.origin + window.location.pathname.split('?')[0] + '?f=' + encodeURIComponent(
+        currentViewId);
+        navigator.clipboard.writeText(link).then(() => {
+            showToast('🔗 Link copied to clipboard!', 'success');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = link;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('🔗 Link copied!', 'success');
+        });
+    });
+
+    // ─── Back button ───
+    backToUploadBtn.addEventListener('click', showUploadPage);
+    homeLink.addEventListener('click', (e) => { e.preventDefault();
+        showUploadPage(); });
+
+    // ─── Browser back/forward ───
+    window.addEventListener('popstate', async (e) => {
+        const params = new URLSearchParams(window.location.search);
+        const fid = params.get('f');
+        if (fid) {
+            const file = await getFileFromDB(fid);
+            if (file) {
+                showViewPage(fid);
+                return;
+            }
+        }
+        showUploadPage();
+    });
+
+    // ─── Events ───
+    dropzone.addEventListener('dragover', e => { e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', e => { e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) addPending(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => {
+        if (fileInput.files && fileInput.files.length > 0) addPending(fileInput.files);
+        fileInput.value = '';
+    });
+    dropzone.addEventListener('click', e => {
+        if (e.target.closest('.remove-btn') || e.target.closest('input')) return;
+        fileInput.click();
+    });
+    clearBtn.addEventListener('click', clearPending);
+    uploadBtn.addEventListener('click', uploadAndShare);
+
+    // ─── Init ───
+    (async function init() {
+        try { await openDB();
+            sharedFiles = await getSharedFromDB(); } catch (e) { console.warn(e);
+            sharedFiles = []; }
+        renderPending();
+        renderShared();
+
+        // Check URL param
+        const params = new URLSearchParams(window.location.search);
+        const fid = params.get('f');
+        if (fid) {
+            const file = await getFileFromDB(fid);
+            if (file) {
+                showViewPage(fid);
+                return;
+            }
+        }
+        showUploadPage();
+    })();
+
+    document.addEventListener('dragover', e => e.preventDefault());
+    document.addEventListener('drop', e => e.preventDefault());
+
+})();
+</script>
+</body>
+</html>
